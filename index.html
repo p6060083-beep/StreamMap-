@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UA Air Alert Sandbox</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Arial,system-ui,sans-serif;background:#080d13;color:#eef3f7;overflow:hidden}
+#app{display:flex;width:100%;height:100%}#map{flex:1;height:100%;background:#05080c}.panel{width:500px;background:#101720;border-left:1px solid #2a3540;display:flex;flex-direction:column;z-index:5000;overflow:hidden}
+.header{padding:15px 16px 12px;border-bottom:1px solid #2a3540}h1{font-size:20px;margin:0;font-weight:800}.small{font-size:12px;color:#8997a6;margin-top:5px}
+.controls{padding:11px;border-bottom:1px solid #2a3540;overflow:auto;flex:1;min-height:0;max-height:none}button{border:0;border-radius:8px;padding:8px 10px;color:#fff;background:#2b3743;font-weight:700;cursor:pointer}button:hover{filter:brightness(1.13)}button:disabled{opacity:.5;cursor:not-allowed}.row{display:flex;gap:6px;flex-wrap:wrap}.yellow{background:#c99700}.red{background:#b7353e}.green{background:#2e3943}.blue{background:#315f8c}.purple{background:#63478e}
+.info{margin-top:9px;padding:11px;border:1px solid #2a3540;background:#0b1015;border-radius:9px}.name{font-weight:800;font-size:15px}.state{margin-top:4px;color:#aebbc8;font-size:12px}
+.section-title{font-size:10px;color:#7f91a0;text-transform:uppercase;letter-spacing:.08em;margin:10px 1px 5px}.quick button{font-size:11px;padding:7px 8px}.soundrow{display:flex;gap:6px;margin-top:7px}.soundrow button{font-size:11px;padding:7px 8px}
+.inputrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.inputrow label{font-size:11px;color:#aebbc8}.inputrow input,.inputrow select{background:#0a1016;border:1px solid #34414e;color:#eef3f7;border-radius:7px;padding:7px;width:72px}.inputrow select{width:100px}.toolbox{background:#0b1015;border:1px solid #27333f;border-radius:9px;padding:8px;margin-top:7px}.toolbox b{font-size:12px}.toolbox .hint{font-size:10px;color:#7f91a0;margin-top:4px}
+.statbox{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}.stat{background:#0b1015;border:1px solid #293541;border-radius:8px;padding:7px;text-align:center}.stat b{display:block;font-size:15px}.stat span{display:block;font-size:9px;color:#8fa0af;margin-top:2px}
+.legend{padding:10px 14px;border-top:1px solid #2a3540;border-bottom:0;flex:0 0 auto;background:#0d141b}.legend div{display:flex;align-items:center;gap:7px;font-size:12px;margin:4px 0}.sw{width:13px;height:13px;border-radius:4px}.s0{background:#66737f}.s1{background:#e6c23a}.s2{background:#f05a63}
+.help{padding:9px 11px;color:#93a1af;font-size:11px;line-height:1.4}#list{overflow:auto;padding:3px 11px 15px;flex:1}.item{display:flex;justify-content:space-between;gap:7px;padding:7px 2px;border-bottom:1px solid #202a34;font-size:12px;cursor:pointer}.item:hover{background:#17212b}.badge{font-size:9px;font-weight:800;padding:3px 5px;border-radius:5px;white-space:nowrap}.b0{background:#394651}.b1{background:#9f8217}.b2{background:#9e3038}.icon{font-size:13px;display:inline-block;width:19px;text-align:center}.timer{font-size:9px;color:#8fa0af;margin-left:5px}
+#log{position:absolute;left:12px;bottom:12px;width:min(520px,calc(100% - 450px));max-height:210px;overflow:auto;background:rgba(8,13,19,.94);border:1px solid #33414e;border-radius:10px;padding:8px;z-index:4500;box-shadow:0 4px 22px #0008}.log-title{font-size:11px;font-weight:800;color:#aebbc8;margin-bottom:5px}.log-item{font-size:11px;line-height:1.35;padding:3px 0;border-bottom:1px solid #1c2731}.log-item:last-child{border-bottom:0}.log-time{color:#7f91a0}
+.loading{position:absolute;z-index:4000;left:16px;top:16px;background:#111820;color:#fff;padding:9px 12px;border-radius:8px;box-shadow:0 3px 15px #0004}.error{color:#ff7777}
+@keyframes alertPulseRed{0%,100%{filter:drop-shadow(0 0 0 rgba(255,70,80,0));opacity:.86}50%{filter:drop-shadow(0 0 10px rgba(255,70,80,.95));opacity:.62}}@keyframes alertPulseYellow{0%,100%{filter:drop-shadow(0 0 0 rgba(255,210,40,0));opacity:.88}50%{filter:drop-shadow(0 0 8px rgba(255,210,40,.9));opacity:.65}}.leaflet-overlay-pane path.alert-pulse-red{animation:alertPulseRed 1.7s ease-in-out infinite}.leaflet-overlay-pane path.alert-pulse-yellow{animation:alertPulseYellow 1.9s ease-in-out infinite}
+.map-minimal .leaflet-tile{filter:grayscale(1) brightness(.7)}.map-dark .leaflet-tile{filter:brightness(.48) contrast(1.15) saturate(.65)}
+.leaflet-tooltip.custom-tip{background:#0b1015;border:1px solid #42515e;color:#eef3f7;box-shadow:0 4px 14px #0008;font-size:11px}.leaflet-tooltip.custom-tip:before{border-top-color:#42515e}.leaflet-control-attribution{display:none}.leaflet-control-zoom a{background:#111820;color:#eef3f7;border-color:#2a3540}
+#map{position:absolute;inset:0;width:100%;height:100%}
+.panel{position:absolute;right:0;top:0;bottom:0;width:500px;height:100%;background:#101720;border-left:1px solid #2a3540;display:flex;flex-direction:column;z-index:5000;overflow:hidden;transition:transform .28s ease;box-shadow:-8px 0 24px rgba(0,0,0,.18)}
+#panelToggle{position:absolute;right:500px;top:14px;z-index:6000;width:34px;height:34px;border:1px solid #34414e;background:#101720;color:#fff;border-radius:9px;font-size:18px;padding:0;transition:right .28s ease}
+#app.panel-collapsed .panel{transform:translateX(100%);pointer-events:none}
+#app.panel-collapsed #panelToggle{right:10px}
+#logToggle{position:absolute;right:8px;top:7px;z-index:5;width:25px;height:25px;padding:0;border:1px solid #34414e;border-radius:7px;background:#101720;color:#fff;font-size:14px;line-height:23px}
+#log.collapsed{height:40px;max-height:40px;overflow:hidden;padding-bottom:8px}
+#log.collapsed #logList{display:none}
+#log.collapsed .log-title{margin:0;padding-right:28px;line-height:25px}
+#logOpen{position:absolute;display:none;left:12px;bottom:12px;z-index:4501;width:34px;height:34px;padding:0;border:1px solid #34414e;border-radius:9px;background:#101720;color:#fff;font-size:18px}
+#logOpen.visible{display:block}
+@media(max-width:800px){.panel{width:360px}#panelToggle{right:360px}#app.panel-collapsed #panelToggle{right:10px}#log{width:calc(100% - 20px);left:10px;bottom:10px}}
+</style>
+</head>
+<body>
+<div id="app"><div id="map"></div><button id="panelToggle" title="Сховати/показати панель">›</button><aside class="panel">
+<div class="header"><h1>StreamMap: Alerts</h1></div>
+<div class="controls">
+<div class="row"><button id="showAll">🗺️ Всі райони</button><button id="showOblasts">🗺️ Області</button><button id="reset">Скинути все</button></div>
+<div class="info"><div class="name" id="selName">Оберіть район або область</div><div class="state" id="selState">Усі райони України вже показані на карті.</div></div>
+<div class="row" style="margin-top:8px"><button class="green" id="off">🛡️ Відбій</button><button class="yellow" id="uav">🛩️ БПЛА</button><button class="red" id="missile">🚀 Ракети</button></div>
+<div class="section-title">Масове керування</div>
+<div class="row quick"><button id="allUav" class="yellow">🛩️ Вся Україна</button><button id="allMissile" class="red">🚀 Вся Україна</button><button id="southUav" class="yellow">🛩️ Південь</button><button id="southMissile" class="red">🚀 Південь</button><button id="eastUav" class="yellow">🛩️ Схід</button><button id="eastMissile" class="red">🚀 Схід</button><button id="centerUav" class="yellow">🛩️ Центр</button><button id="centerMissile" class="red">🚀 Центр</button><button id="westUav" class="yellow">🛩️ Захід</button><button id="westMissile" class="red">🚀 Захід</button><button id="allOff" class="green">🛡️ Зняти все</button><button id="chaos" class="purple">🎲 Хаос</button></div>
+<div class="section-title">Події та автокерування</div>
+<div class="toolbox"><b>⏱ Відкладений старт</b><div class="inputrow" style="margin-top:6px"><label>БПЛА через</label><input id="delayUav" type="number" min="0" value="10"><span style="font-size:11px">с</span><button id="scheduleUav" class="yellow">Запланувати</button></div><div class="inputrow" style="margin-top:5px"><label>Ракети через</label><input id="delayMissile" type="number" min="0" value="20"><span style="font-size:11px">с</span><button id="scheduleMissile" class="red">Запланувати</button></div><div class="inputrow" style="margin-top:5px"><label>Відбій через</label><input id="delayOff" type="number" min="0" value="30"><span style="font-size:11px">с</span><button id="scheduleOff" class="green">🛡 Запланувати відбій</button></div></div>
+<div class="soundrow"><button id="soundToggle">🔊 Звуки: увімк.</button><button id="testAlarm">🚨 Тест</button></div>
+<div class="inputrow" style="margin-top:7px"><label>Стиль карти</label><select id="mapStyle"><option value="light">Світла</option><option value="dark" selected>Темна</option><option value="minimal">Мінімалістична</option></select><button id="copyReport" class="blue">📋 Скопіювати звіт</button></div>
+<div class="statbox"><div class="stat"><b id="redPct">0%</b><span>території в червоній</span></div><div class="stat"><b id="yellowPct">0%</b><span>території в жовтій</span></div><div class="stat"><b id="activeCount">0</b><span>активних областей/районів</span></div><div class="stat"><b id="longest">0:00</b><span>найдовша тривога</span></div></div>
+</div>
+<div class="legend"><div><span class="sw s0"></span> Немає тривоги</div><div><span class="sw s1"></span> Жовтий — загроза БПЛА</div><div><span class="sw s2"></span> Червоний — загроза ракет</div></div>
+
+</aside></div>
+<div id="log"><div class="log-title">📜 Стрічка подій</div><button id="logToggle" title="Згорнути стрічку подій">⌄</button><div id="logList"></div></div><button id="logOpen" title="Показати стрічку подій">⌃</button><div class="loading" id="loading">Завантаження карти…</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const GEO='https://raw.githubusercontent.com/darmat1/ukraine-geo-data/main/geodata/';
+const map=L.map('map',{zoomControl:true}).setView([48.4,31.2],6);
+const tileLayers={
+ light:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'© Esri'}),
+ dark:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'© Esri'}),
+ minimal:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'© Esri'})
+};
+let activeTiles=tileLayers.dark.addTo(map); document.body.classList.add('map-dark');
+const colors={0:'#66737f',1:'#e6c23a',2:'#f05a63'}, labels={0:'Відбій',1:'Загроза БПЛА',2:'Загроза ракет'};
+let states={}, timers={};
+let soundEnabled=localStorage.getItem('uaAirAlertSound')!=='0';
+let logs=[], scheduled=[];
+const REGIONS={
+ south:['Одеська область','Миколаївська область','Херсонська область','Запорізька область'],
+ east:['Донецька область','Луганська область','Харківська область','Дніпропетровська область'],
+ center:['Київська область','Черкаська область','Полтавська область','Кіровоградська область','Вінницька область','Житомирська область','Чернігівська область','Сумська область'],
+ west:['Волинська область','Рівненська область','Львівська область','Тернопільська область','Івано-Франківська область','Закарпатська область','Чернівецька область','Хмельницька область']
+};
+const EXCLUDED_OBLASTS=['Автономна Республіка Крим','АР Крим','Крим','Луганська область','Луганська'];
+function isExcluded(name){const n=String(name||'').trim().toLowerCase();return EXCLUDED_OBLASTS.some(x=>n===x.toLowerCase())||n.includes('луган')||n.includes('крим')}
+function slug(text){const m={'а':'a','б':'b','в':'v','г':'h','ґ':'g','д':'d','е':'e','є':'ye','ж':'zh','з':'z','и':'y','і':'i','ї':'yi','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ь':'','ю':'yu','я':'ya','ʼ':'',"'":''};return text.toLowerCase().split('').map(c=>m[c]??c).join('').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')}
+function featureName(p){return p?.name||p?.NAME||p?.name_uk||p?.NAME_UA||p?.NAME_1||'Без назви'}
+function featureKey(p){return String(p?.id||p?.osm_id||p?.KOATUU||p?.codifier||slug(featureName(p)))}
+function getState(p){return Number(states[featureKey(p)]||0)}
+function setState(p,s){const k=featureKey(p);states[k]=s;if(s>0&&!timers[k])timers[k]=Date.now();if(s===0)delete timers[k];persist()}
+function persist(){/* Стан пісочниці навмисно НЕ зберігається між перезавантаженнями. */}
+function getOblastName(p){return p?.__oblast||p?.oblast||p?.region||featureName(p)}
+function formatDuration(ms){if(!ms||ms<0)return'0:00';const total=Math.floor(ms/1000),h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`}
+function alertIcon(s){return s===2?'🚀':s===1?'🛩️':'🛡️'}
+function style(p,hover=false){const s=getState(p);return{color:s===2?'#ff6670':s===1?'#f2cd4b':'#82909d',weight:hover?3:1.15,fillColor:colors[s],fillOpacity:s===0?.62:.86}}
+function styleOblast(p,hover=false){const s=getState(p);return{color:s===2?'#ff6670':s===1?'#f2cd4b':'#82909d',weight:hover?3:1.5,fillColor:colors[s],fillOpacity:s===0?.48:.86}}
+function applyPulse(layer,p){if(!layer||!layer._path)return;layer._path.classList.remove('alert-pulse-red','alert-pulse-yellow');const s=getState(p);if(s===2)layer._path.classList.add('alert-pulse-red');if(s===1)layer._path.classList.add('alert-pulse-yellow')}
+function refreshLayer(layer,fn){if(!layer)return;layer.setStyle(f=>fn(f.properties));layer.eachLayer(l=>applyPulse(l,l.feature?.properties||{}))}
+function currentDuration(p){const t=timers[featureKey(p)];return t?Date.now()-t:0}
+function tooltipHTML(p,g){const s=getState(p), area=geometryArea(g)/1e6;const dur=s?formatDuration(currentDuration(p)):'0:00';return `<b>${featureName(p)}</b><br>Площа: ${area.toFixed(1)} км²<br>Статус: ${alertIcon(s)} ${labels[s]}<br>Тривалість: ${dur}`}
+function bindTooltip(l,p,g){l.bindTooltip(tooltipHTML(p,g),{className:'custom-tip',sticky:true,direction:'top'});l.on('tooltipopen',()=>l.setTooltipContent(tooltipHTML(p,g)))}
+function updateInfo(){const n=document.getElementById('selName'),s=document.getElementById('selState');if(!selected){n.textContent='Оберіть район або область';s.textContent=currentMode==='oblasts'?'Оберіть область та встановіть рівень тривоги.':'Усі райони України вже показані на карті.';return}n.textContent=featureName(selected);s.textContent='Поточний стан: '+labels[getState(selected)]}
+function renderList(){}
+function selectRayon(p){selected=p;currentMode='rayons';updateInfo();if(rayonLayer)rayonLayer.eachLayer(l=>{if(featureKey(l.feature.properties)===featureKey(p))l.bringToFront()})}
+function selectOblast(p){selected=p;currentMode='oblasts';updateInfo();if(oblastLayer)oblastLayer.eachLayer(l=>{if(featureKey(l.feature.properties)===featureKey(p))l.bringToFront()})}
+function oblastRayons(name){return rayonFeatures.filter(p=>String(p.__oblast||'').trim()===String(name||'').trim())}
+function playTone(kind='siren'){if(!soundEnabled)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const ctx=new C(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);const t=ctx.currentTime;if(kind==='off'){o.type='sine';o.frequency.setValueAtTime(650,t);o.frequency.exponentialRampToValueAtTime(350,t+.7);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.14,t+.04);g.gain.exponentialRampToValueAtTime(.0001,t+.75);o.start(t);o.stop(t+.8)}else{o.type='sawtooth';g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.1,t+.03);for(let i=0;i<4;i++){o.frequency.setValueAtTime(520,t+i*.35);o.frequency.linearRampToValueAtTime(850,t+i*.35+.17);o.frequency.linearRampToValueAtTime(520,t+i*.35+.34)}g.gain.exponentialRampToValueAtTime(.0001,t+1.45);o.start(t);o.stop(t+1.5)}}catch(e){console.warn(e)}}
+function addLog(text){const d=new Date(),tm=d.toLocaleTimeString('uk-UA',{hour12:false});logs.push({time:tm,text});logs=logs.slice(-300);persist();renderLogs()}
+function renderLogs(){const b=document.getElementById('logList');b.innerHTML=logs.slice().reverse().map(x=>`<div class="log-item"><span class="log-time">${x.time}</span> — ${x.text}</div>`).join('')}
+function stateLabel(s){return s===2?'🚀 Ракети':s===1?'🛩️ БПЛА':'🛡️ Відбій'}
+function setSelectedState(s,opts={}){if(!selected){alert('Спочатку оберіть область або район.');return}const mode=currentMode,name=featureName(selected);if(mode==='oblasts'){setState(selected,s);oblastRayons(name).forEach(p=>setState(p,s));refreshLayer(oblastLayer,styleOblast);refreshLayer(rayonLayer,style);addLog(`${stateLabel(s)} — ${name}: ${s?'оголошено загрозу.':'відбій загрози.'}`)}else{setState(selected,s);refreshLayer(rayonLayer,style);addLog(`${stateLabel(s)} — ${name} (${getOblastName(selected)}): ${s?'оголошено загрозу.':'відбій загрози.'}`)}updateInfo();renderList();updateStats();if(!opts.silent){if(s)playTone('siren');else playTone('off')}}
+function setManyByOblastNames(names,s,opts={}){const wanted=new Set(names.map(x=>x.toLowerCase())),changed=[];oblastFeatures.forEach(f=>{const n=featureName(f.properties);if(wanted.has(n.toLowerCase())){setState(f.properties,s);oblastRayons(n).forEach(p=>setState(p,s));changed.push(n)}});refreshLayer(oblastLayer,styleOblast);refreshLayer(rayonLayer,style);renderList();updateStats();if(changed.length)addLog(`${stateLabel(s)} — ${changed.join(', ')}: ${s?'оголошено загрозу.':'відбій загрози.'}`);if(!opts.silent){if(s)playTone('siren');else playTone('off')}}
+function setAll(s,opts={}){setManyByOblastNames(oblastFeatures.map(f=>featureName(f.properties)),s,opts)}
+function clearAll(opts={}){states={};timers={};persist();refreshLayer(rayonLayer,style);refreshLayer(oblastLayer,styleOblast);renderList();updateInfo();updateStats();if(!opts.silent){playTone('off')}addLog('🛡️ Відбій — усі активні загрози знято.')}
+function ringArea(coords){let area=0;if(!coords||coords.length<3)return 0;for(let i=0,j=coords.length-1;i<coords.length;j=i++){const [x1,y1]=coords[j],[x2,y2]=coords[i];area+=(x1*Math.PI/180)*(y2*Math.PI/180)-(x2*Math.PI/180)*(y1*Math.PI/180)}return Math.abs(area)*6371008.8*6371008.8/2}
+function polygonArea(poly){if(!poly)return 0;const r=poly.coordinates||[];let a=ringArea(r[0]);for(let i=1;i<r.length;i++)a-=ringArea(r[i]);return Math.abs(a)}
+function geometryArea(g){if(!g)return 0;if(g.type==='Polygon')return polygonArea(g);if(g.type==='MultiPolygon')return g.coordinates.reduce((s,p)=>s+polygonArea({type:'Polygon',coordinates:p}),0);return 0}
+function updateStats(){
+  const now=Date.now(); let redArea=0,yellowArea=0,totalArea=0,longest=0,activeCount=0;
+  if(rayonLayer){
+    rayonLayer.getLayers().forEach(l=>{
+      const p=l.feature.properties,g=l.feature.geometry,a=geometryArea(g),st=getState(p);
+      totalArea+=a;if(st===2)redArea+=a;if(st===1)yellowArea+=a;if(st>0)activeCount++;
+      const t=timers[featureKey(p)];if(t)longest=Math.max(longest,now-t);
+    });
+  }
+  document.getElementById('redPct').textContent=(totalArea?(redArea/totalArea*100).toFixed(1):'0')+'%';
+  const yp=document.getElementById('yellowPct'); if(yp)yp.textContent=(totalArea?(yellowArea/totalArea*100).toFixed(1):'0')+'%';
+  document.getElementById('activeCount').textContent=activeCount;
+  document.getElementById('longest').textContent=formatDuration(longest);
+}
+function reportText(){
+  const activeBy={1:[],2:[]}; let total=0,redArea=0,yellowArea=0,totalArea=0;
+  if(rayonLayer)rayonLayer.getLayers().forEach(l=>{
+    const p=l.feature.properties,g=l.feature.geometry,a=geometryArea(g),st=getState(p);
+    totalArea+=a;if(st===2)redArea+=a;if(st===1)yellowArea+=a;
+    if(st){total++;const district=featureName(p),ob=getOblastName(p);activeBy[st].push(`${district}${/область$/i.test(district)?'':' район'}, ${ob.replace(/ область$/,'')} обл`);}
+  });
+  const red=(totalArea?redArea/totalArea*100:0).toFixed(1),yellow=(totalArea?yellowArea/totalArea*100:0).toFixed(1);
+  const threats=[activeBy[1].length?'БПЛА ('+activeBy[1].join(', ')+')':'',activeBy[2].length?'Ракети ('+activeBy[2].join(', ')+')':''].filter(Boolean).join(', ')||'немає';
+  return `🚨 Стан мапи тривог у пісочниці:\n• Загалом активовано областей/районів: ${total}\n• Охоплено території в червоній зоні (Ракети): ${red}%\n• Охоплено території в жовтій зоні (БПЛА): ${yellow}%\n• Найдовша симуляція: ${document.getElementById('longest').textContent}\n• Активні загрози: ${threats}.`;
+}
+async function copyReport(){const text=reportText();try{await navigator.clipboard.writeText(text);addLog('📋 Звіт скопійовано для соцмереж.')}catch(e){prompt('Скопіюйте звіт:',text)}}
+function scheduleState(p,s,delayMs){const name=featureName(p);addLog(`⏳ Заплановано ${stateLabel(s)} — ${name} через ${Math.round(delayMs/1000)} с.`);const id=setTimeout(()=>{const isOb=oblastFeatures.find(f=>featureName(f.properties)===name);if(isOb){setManyByOblastNames([name],s)}else{setState(p,s);refreshLayer(rayonLayer,style);renderList();updateStats();addLog(`${stateLabel(s)} — ${name}: спрацювала запланована подія.`);playTone(s?'siren':'off')}},Math.max(0,delayMs));scheduled.push({id,name})}
+function scheduleOff(){if(!selected){alert('Спочатку оберіть область або район.');return}const target=selected,mode=currentMode,name=featureName(target);const delay=Math.max(0,Number(document.getElementById('delayOff').value)||0)*1000;addLog(`⏳ Заплановано відбій — ${name} через ${Math.round(delay/1000)} с.`);const id=setTimeout(()=>{if(mode==='oblasts'){setManyByOblastNames([name],0,{silent:true});addLog(`🛡️ ${name}: спрацював запланований відбій.`);playTone('off')}else{setState(target,0);refreshLayer(rayonLayer,style);updateStats();addLog(`🛡️ ${name}: спрацював запланований відбій.`);playTone('off')}if(rayonLayer)refreshLayer(rayonLayer,style);if(oblastLayer)refreshLayer(oblastLayer,styleOblast)},delay);scheduled.push({id,name})}
+function scheduleSelected(type){if(!selected){alert('Спочатку оберіть область або район.');return}const delay=Number(document.getElementById(type==='uav'?'delayUav':'delayMissile').value)||0;scheduleState(selected,type==='uav'?1:2,delay*1000)}
+function chaos(){if(!rayonFeatures.length){alert('Дочекайтеся завантаження районів.');return}const count=Math.max(3,Math.min(14,Math.floor(Math.random()*12)+3));const shuffled=[...oblastFeatures].sort(()=>Math.random()-.5).slice(0,count);shuffled.forEach(f=>{const s=Math.random()<.52?1:2;const name=featureName(f.properties);setState(f.properties,s);oblastRayons(name).forEach(p=>setState(p,s))});const rc=Math.min(rayonFeatures.length,Math.floor(Math.random()*25)+10);[...rayonFeatures].sort(()=>Math.random()-.5).slice(0,rc).forEach(p=>setState(p,Math.random()<.55?1:2));refreshLayer(oblastLayer,styleOblast);refreshLayer(rayonLayer,style);renderList();updateStats();addLog(`🎲 Хаос — випадково активовано ${count} областей та ${rc} районів.`);playTone('siren')}
+function setMapStyle(v){document.body.classList.remove('map-dark','map-minimal');if(v==='dark')document.body.classList.add('map-dark');if(v==='minimal')document.body.classList.add('map-minimal');activeTiles.setOpacity(1)}
+function attachMapLayerStyle(){document.getElementById('mapStyle').value='dark';setMapStyle('dark')}
+function bindLayerEvents(l,p,isOb){l.on('mouseover',()=>l.setStyle(isOb?styleOblast(p,true):style(p,true)));l.on('mouseout',()=>l.setStyle(isOb?styleOblast(p,false):style(p,false)));bindTooltip(l,p,l.feature.geometry)}
+async function loadJSON(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+let oblastLayer=null,rayonLayer=null,currentMode='rayons',selected=null,rayonFeatures=[],oblastFeatures=[];
+async function loadOblasts(){const loading=document.getElementById('loading');loading.textContent='Завантаження областей України…';loading.style.display='block';const data=await loadJSON(GEO+'Ukraine.geojson');oblastFeatures=(data.features||[]).filter(f=>!isExcluded(featureName(f.properties||{}))).map(f=>{f.properties=f.properties||{};return f});if(rayonLayer)map.removeLayer(rayonLayer);if(oblastLayer)map.removeLayer(oblastLayer);oblastLayer=L.geoJSON({type:'FeatureCollection',features:oblastFeatures},{style:f=>styleOblast(f.properties),onEachFeature:(f,l)=>{const p=f.properties;l.on('click',e=>{L.DomEvent.stopPropagation(e);selectOblast(p)});l.on('mouseover',()=>l.setStyle(styleOblast(p,true)));l.on('mouseout',()=>l.setStyle(styleOblast(p,false)));bindTooltip(l,p,f.geometry)}}).addTo(map);oblastLayer.eachLayer(l=>applyPulse(l,l.feature?.properties||{}));currentMode='oblasts';selected=null;updateInfo();renderList();updateStats();if(oblastLayer.getLayers().length)map.fitBounds(oblastLayer.getBounds(),{padding:[18,18]});loading.style.display='none'}
+async function loadAllRayons(){const loading=document.getElementById('loading');loading.textContent='Завантаження районів України…';loading.style.display='block';const oblastData=await loadJSON(GEO+'Ukraine.geojson');const oblasts=oblastData.features||[];oblastFeatures=oblasts.filter(f=>!isExcluded(featureName(f.properties||{}))).map(f=>{f.properties=f.properties||{};return f});const results=[];for(const f of oblasts.filter(f=>!isExcluded(featureName(f.properties||{})))){const name=featureName(f.properties||{});try{const data=await loadJSON(GEO+slug(name)+'.geojson');(data.features||[]).forEach(r=>{r.properties=r.properties||{};r.properties.__oblast=name;results.push(r)})}catch(e){console.warn('Не вдалося завантажити райони області:',name,e)}}rayonFeatures=results.map(f=>f.properties);if(rayonLayer)map.removeLayer(rayonLayer);rayonLayer=L.geoJSON({type:'FeatureCollection',features:results},{style:f=>style(f.properties),onEachFeature:(f,l)=>{const p=f.properties;l.on('click',e=>{L.DomEvent.stopPropagation(e);selectRayon(p)});l.on('mouseover',()=>l.setStyle(style(p,true)));l.on('mouseout',()=>l.setStyle(style(p,false)));bindTooltip(l,p,f.geometry)}}).addTo(map);rayonLayer.eachLayer(l=>applyPulse(l,l.feature?.properties||{}));currentMode='rayons';selected=null;updateInfo();renderList();updateStats();if(rayonLayer.getLayers().length)map.fitBounds(rayonLayer.getBounds(),{padding:[18,18]});loading.style.display='none'}
+
+
+document.getElementById('panelToggle').onclick=()=>{const app=document.getElementById('app');app.classList.toggle('panel-collapsed');document.getElementById('panelToggle').textContent=app.classList.contains('panel-collapsed')?'‹':'›';setTimeout(()=>map.invalidateSize(),320)};
+document.getElementById('logToggle').onclick=()=>{const log=document.getElementById('log');log.classList.add('collapsed');document.getElementById('logOpen').classList.add('visible')};
+document.getElementById('logOpen').onclick=()=>{const log=document.getElementById('log');log.classList.remove('collapsed');document.getElementById('logOpen').classList.remove('visible')};
+document.getElementById('showAll').onclick=loadAllRayons;document.getElementById('showOblasts').onclick=loadOblasts;document.getElementById('off').onclick=()=>setSelectedState(0);document.getElementById('uav').onclick=()=>setSelectedState(1);document.getElementById('missile').onclick=()=>setSelectedState(2);document.getElementById('reset').onclick=()=>clearAll();document.getElementById('allOff').onclick=()=>clearAll();document.getElementById('allUav').onclick=()=>setManyByOblastNames(oblastFeatures.map(f=>featureName(f.properties)),1,{region:'all'});document.getElementById('allMissile').onclick=()=>setManyByOblastNames(oblastFeatures.map(f=>featureName(f.properties)),2,{region:'all'});
+document.getElementById('southUav').onclick=()=>setManyByOblastNames(REGIONS.south,1,{region:'south'});document.getElementById('southMissile').onclick=()=>setManyByOblastNames(REGIONS.south,2,{region:'south'});
+document.getElementById('eastUav').onclick=()=>setManyByOblastNames(REGIONS.east,1,{region:'east'});document.getElementById('eastMissile').onclick=()=>setManyByOblastNames(REGIONS.east,2,{region:'east'});
+document.getElementById('centerUav').onclick=()=>setManyByOblastNames(REGIONS.center,1,{region:'center'});document.getElementById('centerMissile').onclick=()=>setManyByOblastNames(REGIONS.center,2,{region:'center'});
+document.getElementById('westUav').onclick=()=>setManyByOblastNames(REGIONS.west,1,{region:'west'});document.getElementById('westMissile').onclick=()=>setManyByOblastNames(REGIONS.west,2,{region:'west'});
+document.getElementById('scheduleUav').onclick=()=>scheduleSelected('uav');document.getElementById('scheduleMissile').onclick=()=>scheduleSelected('missile');document.getElementById('scheduleOff').onclick=scheduleOff;document.getElementById('chaos').onclick=chaos;document.getElementById('copyReport').onclick=copyReport;
+document.getElementById('soundToggle').onclick=()=>{soundEnabled=!soundEnabled;localStorage.setItem('uaAirAlertSound',soundEnabled?'1':'0');document.getElementById('soundToggle').textContent='🔊 Звуки: '+(soundEnabled?'увімк.':'вимк.')};document.getElementById('testAlarm').onclick=()=>playTone('siren');
+document.getElementById('mapStyle').onchange=e=>setMapStyle(e.target.value);document.getElementById('soundToggle').textContent='🔊 Звуки: '+(soundEnabled?'увімк.':'вимк.');renderLogs();attachMapLayerStyle();setInterval(()=>{renderList();updateStats();if(rayonLayer)rayonLayer.eachLayer(l=>{if(l.getTooltip()?.isOpen())l.setTooltipContent(tooltipHTML(l.feature.properties,l.feature.geometry))});if(oblastLayer)oblastLayer.eachLayer(l=>{if(l.getTooltip()?.isOpen())l.setTooltipContent(tooltipHTML(l.feature.properties,l.feature.geometry))})},1000);
+loadAllRayons().catch(e=>{const loading=document.getElementById('loading');loading.innerHTML='<span class="error">Не вдалося завантажити райони. '+e.message+'</span>';console.error(e)});
+</script></body></html>
